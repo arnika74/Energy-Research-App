@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Autonomous Energy Researcher Agent API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: research
+    description: Research agent operations
+  - name: history
+    description: Research history operations
 paths:
   /healthz:
     get:
@@ -24,6 +27,115 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /research:
+    post:
+      operationId: startResearch
+      tags: [research]
+      summary: Start a research job
+      description: Submits a research query and returns a job ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResearchRequest"
+      responses:
+        "200":
+          description: Research job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchJobResponse"
+        "500":
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /research/{jobId}:
+    get:
+      operationId: getResearchJob
+      tags: [research]
+      summary: Get research job status and result
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job status and result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchJobStatus"
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /history:
+    get:
+      operationId: getResearchHistory
+      tags: [history]
+      summary: Get all stored research reports
+      responses:
+        "200":
+          description: List of stored research reports
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchHistoryResponse"
+
+  /history/{reportId}:
+    get:
+      operationId: getResearchReport
+      tags: [history]
+      summary: Get a specific stored research report
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full research report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchReport"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /search:
+    post:
+      operationId: semanticSearch
+      tags: [history]
+      summary: Semantic search across stored research
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +146,196 @@ components:
       required:
         - status
 
+    ResearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The energy research query
+        maxSources:
+          type: integer
+          description: Maximum number of sources to search (default 5)
+          default: 5
+      required:
+        - query
+
+    ResearchJobResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        message:
+          type: string
+      required:
+        - jobId
+        - status
+        - message
+
+    ResearchJobStatus:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        query:
+          type: string
+        progress:
+          type: string
+          description: Current progress message
+        report:
+          $ref: "#/components/schemas/ResearchReport"
+        error:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: string
+      required:
+        - jobId
+        - status
+        - query
+
+    ResearchReport:
+      type: object
+      properties:
+        id:
+          type: string
+        query:
+          type: string
+        title:
+          type: string
+        introduction:
+          type: string
+        keyInsights:
+          type: array
+          items:
+            type: string
+        conclusion:
+          type: string
+        references:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reference"
+        createdAt:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - query
+        - title
+        - introduction
+        - keyInsights
+        - conclusion
+        - references
+        - createdAt
+
+    Reference:
+      type: object
+      properties:
+        url:
+          type: string
+        title:
+          type: string
+        snippet:
+          type: string
+      required:
+        - url
+        - title
+
+    ResearchHistoryResponse:
+      type: object
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResearchReportSummary"
+        total:
+          type: integer
+      required:
+        - reports
+        - total
+
+    ResearchReportSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        query:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+        sourceCount:
+          type: integer
+      required:
+        - id
+        - query
+        - title
+        - createdAt
+        - sourceCount
+
+    SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+        topK:
+          type: integer
+          default: 3
+      required:
+        - query
+
+    SearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        total:
+          type: integer
+      required:
+        - results
+        - total
+
+    SearchResult:
+      type: object
+      properties:
+        reportId:
+          type: string
+        query:
+          type: string
+        title:
+          type: string
+        score:
+          type: number
+        snippet:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - reportId
+        - query
+        - title
+        - score
+        - snippet
+        - createdAt
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+      required:
+        - error

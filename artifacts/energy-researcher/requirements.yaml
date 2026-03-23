@@ -1,0 +1,15 @@
+packages:
+  "framer-motion": "Page transitions, staggered list animations, and smooth layout changes"
+  "date-fns": "Formatting timestamps for history and reports"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes in custom UI components"
+
+images:
+  - path: "artifacts/energy-researcher/public/images/energy-bg.png"
+    description: "Abstract modern dark background with electric blue and cyan glowing geometric lines, data grids, and glowing nodes, representing advanced energy and AI technology, very premium professional dark dashboard style"
+    aspect_ratio: "16:9"
+
+notes:
+  - The frontend proxies API calls to /api which forwards to the Python backend
+  - Job polling uses TanStack Query refetchInterval on the /api/research/:jobId endpoint
+  - Using generated Orval hooks from @workspace/api-client-react

@@ -1,0 +1,225 @@
+You are a senior full-stack AI developer.
+I want you to build a complete working project inside Replit.
+
+The project name is:
+
+Autonomous Energy Researcher Agent
+
+The system must follow a multi-agent architecture and must use only free tools (no paid APIs).
+
+PROJECT GOAL
+
+Build an AI research assistant that can:
+
+Take an energy-related research query from the user
+Automatically search the web
+Extract useful information from multiple websites
+Analyze the collected data
+Generate a structured research report
+Store the research output in a knowledge repository
+Show the result in a beautiful and interactive frontend
+FINAL TECH STACK (USE EXACTLY THIS)
+Programming Language
+
+Python
+
+AI / Agent Framework
+
+LangChain
+CrewAI
+
+LLM (FREE ONLY)
+
+Use a free open-source model from HuggingFace.
+
+Preferred model:
+
+mistralai/Mistral-7B-Instruct
+
+If the model is too heavy, use:
+
+google/flan-t5-base
+
+The model must run using HuggingFace Transformers (no paid APIs).
+
+Embedding Model (FREE)
+
+sentence-transformers/all-MiniLM-L6-v2
+
+Web Search (FREE)
+
+DuckDuckGo search using LangChain tools
+
+Web Scraping
+
+BeautifulSoup (for static websites)
+Selenium (for dynamic websites if needed)
+
+Vector Database (FREE)
+
+FAISS
+
+Backend
+
+FastAPI
+
+Frontend
+
+Streamlit (but design it beautifully and professionally)
+
+SYSTEM ARCHITECTURE
+
+The system must follow this pipeline:
+
+User Query
+→ Research Agent
+→ Analysis Agent
+→ Summary Agent
+→ Knowledge Repository
+→ Final Output
+
+AGENTS YOU MUST CREATE
+1. Research Agent
+
+Responsibilities:
+
+Perform DuckDuckGo search
+Collect top 5–10 links
+Extract text from websites
+Clean the content
+2. Analysis Agent
+
+Responsibilities:
+
+Remove irrelevant information
+Extract key points
+Organize the content
+3. Summary Agent
+
+Responsibilities:
+
+Use the LLM to generate a structured research report
+Format output into:
+Title
+Introduction
+Key Insights
+Conclusion
+References
+KNOWLEDGE REPOSITORY
+
+You must implement:
+
+FAISS vector database
+Local storage using JSON or text files
+
+Workflow:
+
+Convert final research report into embeddings using MiniLM
+Store embeddings in FAISS
+Save full research report locally
+Allow similarity search in future queries
+PROJECT STRUCTURE (CREATE AUTOMATICALLY)
+
+project/
+
+backend/
+main.py
+
+agents/
+research_agent.py
+analysis_agent.py
+summary_agent.py
+
+tools/
+search_tool.py
+scraper_tool.py
+embedding_tool.py
+
+database/
+faiss_store.py
+storage.py
+
+frontend/
+app.py
+
+models/
+llm_model.py
+
+config/
+settings.py
+
+requirements.txt
+README.md
+
+FRONTEND REQUIREMENTS (IMPORTANT)
+
+Create a beautiful and interactive Streamlit frontend.
+
+The UI must include:
+
+A professional title:
+Autonomous Energy Researcher Agent
+A modern layout with:
+Input box for research query
+"Generate Research" button
+Loading animation while processing
+Structured output display
+Section cards (Title, Introduction, Insights, Conclusion)
+Scrollable results
+Dark/light friendly layout
+Sidebar with:
+Project description
+Stored research history
+About section
+
+Make the UI visually attractive using:
+
+Streamlit containers
+Columns
+Headers
+Expandable sections
+Markdown formatting
+Icons/emojis where appropriate
+REQUIREMENTS FILE
+
+Generate a requirements.txt using only free libraries.
+
+Example:
+langchain
+crewai
+fastapi
+streamlit
+faiss-cpu
+sentence-transformers
+transformers
+duckduckgo-search
+beautifulsoup4
+selenium
+uvicorn
+python-dotenv
+
+IMPORTANT RULES
+
+Follow these rules strictly:
+
+Do NOT use OpenAI API
+Do NOT use paid search APIs
+Do NOT use paid LLM services
+Everything must run inside Replit
+Code must be modular and clean
+Use classes for agents
+Add comments in every file
+Add proper error handling
+Add a README.md with step-by-step run instructions
+FINAL OUTPUT REQUIRED
+
+Generate:
+
+Complete backend code
+Agent implementation
+HuggingFace model integration
+FAISS vector database integration
+Beautiful Streamlit frontend
+requirements.txt
+README.md with instructions
+Working project structure
