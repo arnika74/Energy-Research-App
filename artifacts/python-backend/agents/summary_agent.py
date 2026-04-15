@@ -1,14 +1,13 @@
 """
-Summary Agent — uses the LLM to generate a structured research report.
-Takes analyzed content and produces a formatted report with sections:
-Title, Introduction, Key Insights, Conclusion, References.
+Summary Agent — generates a structured research report using the LLM.
+Uses 2 LLM calls total (title+intro in one, conclusion in one) for speed.
+Key insights come directly from extracted sentences — no extra LLM call needed.
 """
 
 import logging
-import re
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Callable, Optional
+from typing import Callable, Dict, List, Optional
 
 from models.llm_model import generate_text
 
@@ -16,55 +15,45 @@ logger = logging.getLogger(__name__)
 
 
 class SummaryAgent:
-    """
-    Agent 3: Generates a structured research report using the LLM.
-    Formats output into professional research report sections.
-    """
-
     def run(
         self,
         query: str,
         analysis_data: Dict,
-        progress_callback: Optional[Callable[[str], None]] = None,
+        progress_cb: Optional[Callable[[str], None]] = None,
     ) -> Dict:
-        """
-        Generate a structured research report.
-
-        Args:
-            query: The original research query
-            analysis_data: Output from AnalysisAgent
-            progress_callback: Optional function to report progress
-
-        Returns:
-            Complete structured research report dict
-        """
         def notify(msg: str):
             logger.info(msg)
-            if progress_callback:
-                progress_callback(msg)
+            if progress_cb:
+                progress_cb(msg)
 
         key_points = analysis_data.get("key_points", [])
-        source_metadata = analysis_data.get("source_metadata", [])
+        source_meta = analysis_data.get("source_metadata", [])
         filtered_content = analysis_data.get("filtered_content", {})
 
-        notify("✍️ Generating research report with AI model...")
+        notify("✍️ Generating report...")
 
-        # Generate title
-        title = self._generate_title(query)
-        notify(f"📄 Title: {title}")
+        # Use top 5 key points as context for LLM calls
+        context = " ".join(key_points[:5])[:800]
 
-        # Generate introduction
-        introduction = self._generate_introduction(query, key_points)
+        # Call 1: title + introduction together (one inference pass)
+        title, introduction = self._gen_title_and_intro(query, context)
+        notify(f"📄 {title}")
 
-        # Generate structured insights
-        insights = self._generate_insights(query, key_points, filtered_content)
-        notify(f"💡 Generated {len(insights)} key insights")
+        # Key insights: extracted sentences directly — no LLM call
+        insights = self._build_insights(query, key_points)
+        notify(f"💡 {len(insights)} insights")
 
-        # Generate conclusion
-        conclusion = self._generate_conclusion(query, insights)
+        # Call 2: conclusion
+        conclusion = self._gen_conclusion(query, context)
 
-        # Format references
-        references = self._format_references(source_metadata)
+        references = [
+            {
+                "url": s["url"],
+                "title": s.get("title", s["url"])[:120],
+                "snippet": s.get("snippet", "")[:200],
+            }
+            for s in source_meta if s.get("url")
+        ]
 
         report = {
             "id": str(uuid.uuid4()),
@@ -77,124 +66,65 @@ class SummaryAgent:
             "createdAt": datetime.now(timezone.utc).isoformat(),
             "sources": list(filtered_content.keys()),
         }
-
-        notify("✅ Research report generated successfully!")
+        notify("✅ Report complete")
         return report
 
-    def _generate_title(self, query: str) -> str:
-        """Generate a research report title."""
+    def _gen_title_and_intro(self, query: str, context: str) -> tuple[str, str]:
+        """Generate title and introduction in one LLM call."""
         prompt = (
-            f"Write a concise, professional research report title for this topic: {query}\n"
-            f"Title (one line, no quotes):"
+            f"Research topic: {query}\n"
+            f"Context: {context[:600]}\n"
+            f"Write a short title and then a 2-sentence introduction.\n"
+            f"Title:"
         )
-        result = generate_text(prompt, max_tokens=60)
+        raw = generate_text(prompt, max_tokens=150)
 
-        if result and len(result) > 5:
-            # Clean up the result
-            title = result.strip().strip('"').strip("'")
-            title = title.split("\n")[0].strip()
-            if len(title) > 10:
-                return title
+        lines = [l.strip() for l in raw.split("\n") if l.strip()]
+        title = ""
+        intro_lines = []
 
-        return f"Energy Research Report: {query.title()}"
+        for i, line in enumerate(lines):
+            if not title:
+                title = line.strip('"\'').strip()
+            else:
+                intro_lines.append(line)
 
-    def _generate_introduction(self, query: str, key_points: List[str]) -> str:
-        """Generate an introduction paragraph for the research topic."""
-        context = " ".join(key_points[:3]) if key_points else ""
-        prompt = (
-            f"Write a 2-3 sentence introduction for a research report on: {query}\n"
-            f"Context from research: {context[:500]}\n"
-            f"Introduction:"
-        )
-        result = generate_text(prompt, max_tokens=200)
+        title = title or f"Energy Research: {query.title()}"
+        introduction = " ".join(intro_lines).strip()
 
-        if result and len(result) > 30:
-            return result.strip()
-
-        return (
-            f"This research report provides a comprehensive analysis of {query}. "
-            f"The following findings are based on data collected from multiple web sources "
-            f"and analyzed using advanced natural language processing techniques."
-        )
-
-    def _generate_insights(
-        self,
-        query: str,
-        key_points: List[str],
-        filtered_content: Dict[str, str],
-    ) -> List[str]:
-        """
-        Generate a list of key insights from the research data.
-        Combines LLM-generated insights with extracted sentences.
-        """
-        if key_points:
-            # Use the top extracted key points as insights
-            insights = []
-            for point in key_points[:8]:
-                cleaned = point.strip()
-                if len(cleaned) > 40:
-                    insights.append(cleaned)
-
-            # Try to generate 2 additional LLM insights
-            context = " ".join(key_points[:5])
-            prompt = (
-                f"Based on this research about {query}, list 2 key insights as bullet points:\n"
-                f"Research data: {context[:600]}\n"
-                f"Key insights:"
+        if not introduction or len(introduction) < 20:
+            introduction = (
+                f"This report analyzes {query} using data collected from multiple sources. "
+                "The findings highlight current trends and developments in the energy sector."
             )
-            llm_result = generate_text(prompt, max_tokens=200)
-            if llm_result:
-                # Parse bullet points
-                for line in llm_result.split("\n"):
-                    line = line.strip().lstrip("•-*123456789. ")
-                    if len(line) > 40 and line not in insights:
-                        insights.append(line)
 
-            return insights[:8] if insights else self._fallback_insights(query)
+        return title, introduction
 
-        return self._fallback_insights(query)
+    def _build_insights(self, query: str, key_points: List[str]) -> List[str]:
+        """Build insights from extracted key sentences — no LLM inference."""
+        insights = [p.strip() for p in key_points[:8] if len(p.strip()) > 40]
 
-    def _fallback_insights(self, query: str) -> List[str]:
-        """Generate generic insights when scraping yields minimal data."""
-        return [
-            f"Research on {query} reveals significant developments in the energy sector.",
-            "Renewable energy technologies continue to advance at an unprecedented pace.",
-            "Policy frameworks and international agreements are shaping the energy transition.",
-            "Economic factors increasingly favor clean energy over fossil fuel alternatives.",
-            "Technological innovation is driving down costs and improving efficiency.",
-        ]
+        if not insights:
+            insights = [
+                f"Research on {query} highlights significant activity in the global energy sector.",
+                "Renewable energy adoption is accelerating across major economies.",
+                "Policy frameworks and investment are key drivers of energy transition.",
+                "Technological innovation continues to drive down clean energy costs.",
+                "Energy efficiency improvements are central to decarbonization strategies.",
+            ]
+        return insights[:8]
 
-    def _generate_conclusion(self, query: str, insights: List[str]) -> str:
+    def _gen_conclusion(self, query: str, context: str) -> str:
         """Generate a conclusion paragraph."""
-        insights_text = " ".join(insights[:3])
         prompt = (
-            f"Write a 2-sentence conclusion for a research report on {query}.\n"
-            f"Based on findings: {insights_text[:400]}\n"
-            f"Conclusion:"
+            f"Write a 2-sentence conclusion for a research report on: {query}\n"
+            f"Based on: {context[:500]}\nConclusion:"
         )
-        result = generate_text(prompt, max_tokens=150)
-
-        if result and len(result) > 30:
-            return result.strip()
-
+        result = generate_text(prompt, max_tokens=80)
+        r = result.strip()
+        if len(r) > 30:
+            return r
         return (
-            f"In conclusion, the research on {query} demonstrates the dynamic nature "
-            f"of the energy landscape and the importance of continued innovation, policy "
-            f"development, and global cooperation to achieve a sustainable energy future."
+            f"Research on {query} underscores the dynamic evolution of the global energy landscape. "
+            "Continued investment in clean technology and supportive policies remain essential for a sustainable future."
         )
-
-    def _format_references(self, source_metadata: List[Dict]) -> List[Dict]:
-        """Format source metadata into reference objects."""
-        references = []
-        for source in source_metadata[:10]:
-            url = source.get("url", "")
-            if not url:
-                continue
-            references.append(
-                {
-                    "url": url,
-                    "title": source.get("title", url)[:120],
-                    "snippet": source.get("snippet", "")[:200],
-                }
-            )
-        return references

@@ -1,0 +1,52 @@
+{
+  "id": "38f6cdf1-259f-40db-83b8-83f1fd33609a",
+  "query": "what are the trends to minimize the use of energy?",
+  "title": "Energy efficiency: What are the trends?",
+  "introduction": "The State of Clean Energy, in 10 Charts We explore the data to see where the clean energy transition stands today, from rising investment and job growth to grid needs and critical mineral demand. For example, in 2024, more than 90% of all new electricity capacity worldwide came from renewable sources such as solar, wind, hydro and geothermal. Yet even with this significant growth in renewable and other zero-emission capacity, the world is still burning, and increasing its use of, fossil fuels.",
+  "keyInsights": [
+    "The State of Clean Energy, in 10 Charts\nWe explore the data to see where the clean energy transition stands today, from rising investment and job growth to grid needs and critical mineral demand.",
+    "For example, in 2024,\nmore than 90% of all new electricity capacity worldwide came from renewable sources\nsuch as solar, wind, hydro and geothermal.",
+    "Yet even with this significant growth in renewable and other zero-emission capacity, the world is still burning, and increasing its use of, fossil fuels.",
+    "Geopolitical turmoil and volatile markets are disrupting alliances and trade, creating new hurdles for the clean energy transition.",
+    "Some countries are backtracking on climate commitments just as global electricity demand is soaring, putting pressure on power grids and making it harder to phase out coal, oil and gas.",
+    "The biggest challenge now is meeting this growing demand with clean energy while taking fossil fuels offline.",
+    "Here, we unpack the latest data to show where the clean energy transition stands today — and where it may be headed next.",
+    "Global Energy Demand and Electricity Use Are Surging\n, outpacing the average annual growth rate of 1.3% from 2013 to 2023."
+  ],
+  "conclusion": "Clean energy is still a major challenge for the energy industry.",
+  "references": [
+    {
+      "url": "https://www.wri.org/insights/state-clean-energy-charted",
+      "title": "Global Energy Trends: Clean Energy Growth and Rising Demand | World ...",
+      "snippet": "We explore the data to see where the clean energy transition stands today, from rising investment and job growth to grid needs and critical mineral demand."
+    },
+    {
+      "url": "https://www.capgemini.com/insights/expert-perspectives/2025-energy-and-utilities-trends-five-key-themes-shaping-the-transition/",
+      "title": "2025 energy and utilities trends: five key themes shaping the ...",
+      "snippet": "As we enter 2025, the global energy sector faces a volatile and fast-moving landscape. Pressures from rising electricity demands, geopolitical shifts, and digital advancements converge to redefine the"
+    },
+    {
+      "url": "https://www.oaepublish.com/articles/cf.2024.48",
+      "title": "Advancing energy efficiency: innovative technologies and strategic ...",
+      "snippet": "The energy industry is being transformed by a new generation of efficiency solutions brought about by digital technologies. These advances can support higher percentages of variable and distributed re"
+    },
+    {
+      "url": "https://www.rff.org/publications/reports/global-energy-outlook-2026/",
+      "title": "Global Energy Outlook 2026: How the World Lost the Goal of 1.5°C",
+      "snippet": "RFF's annual Global Energy Outlook harmonizes a range of long-term energy projections to find key trends in global energy consumption, emissions, and geopolitics."
+    },
+    {
+      "url": "https://www.sanalifeenergy.com/blog/the-future-of-energy-7-trends-transforming-2025",
+      "title": "The Future of Energy: 7 Trends Transforming 2025 | Sanalife",
+      "snippet": "These seven trends—from AI-driven energy optimization to the rise of regulation and renewables—will define energy management in 2025."
+    }
+  ],
+  "createdAt": "2026-04-15T09:43:47.108775+00:00",
+  "sources": [
+    "https://www.wri.org/insights/state-clean-energy-charted",
+    "https://www.capgemini.com/insights/expert-perspectives/2025-energy-and-utilities-trends-five-key-themes-shaping-the-transition/",
+    "https://www.sanalifeenergy.com/blog/the-future-of-energy-7-trends-transforming-2025",
+    "https://www.rff.org/publications/reports/global-energy-outlook-2026/",
+    "https://www.oaepublish.com/articles/cf.2024.48"
+  ]
+}

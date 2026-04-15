@@ -1,8 +1,6 @@
 """
-LLM Model loader and wrapper for generating research reports.
-Uses HuggingFace Transformers with a free open-source model.
-Primary: google/flan-t5-base (fast, reliable on CPU)
-Fallback: any seq2seq or causal LM on HuggingFace
+HuggingFace LLM wrapper.
+Model is loaded once at startup and reused for all requests.
 """
 
 import logging
@@ -13,82 +11,51 @@ logger = logging.getLogger(__name__)
 _pipeline = None
 
 
-def get_llm_pipeline():
-    """
-    Load the HuggingFace text generation pipeline (singleton).
-    Uses T5-based seq2seq for reliable summarization on CPU.
-    """
+def load_model() -> None:
+    """Preload the LLM pipeline. Call this once at server startup."""
     global _pipeline
     if _pipeline is not None:
-        return _pipeline
+        return
 
-    from config.settings import LLM_MODEL_NAME, LLM_MAX_NEW_TOKENS, LLM_DEVICE
+    from config.settings import LLM_MODEL_NAME, LLM_MAX_NEW_TOKENS
 
-    logger.info(f"Loading LLM model: {LLM_MODEL_NAME}")
-
+    logger.info(f"Loading LLM: {LLM_MODEL_NAME}")
     try:
         from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 
         tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL_NAME)
         model = AutoModelForSeq2SeqLM.from_pretrained(LLM_MODEL_NAME)
-
         _pipeline = pipeline(
             "text2text-generation",
             model=model,
             tokenizer=tokenizer,
-            device=-1,  # CPU
+            device=-1,
             max_new_tokens=LLM_MAX_NEW_TOKENS,
         )
-        logger.info(f"LLM model loaded successfully: {LLM_MODEL_NAME}")
-        return _pipeline
-
+        logger.info("LLM loaded successfully")
     except Exception as e:
-        logger.error(f"Failed to load primary model {LLM_MODEL_NAME}: {e}")
-        # Fallback to a simpler model
-        logger.info("Falling back to google/flan-t5-small")
-        from transformers import pipeline
-
-        _pipeline = pipeline(
+        logger.error(f"Failed to load {LLM_MODEL_NAME}: {e} — falling back to flan-t5-small")
+        from transformers import pipeline as hf_pipeline
+        _pipeline = hf_pipeline(
             "text2text-generation",
             model="google/flan-t5-small",
             device=-1,
-            max_new_tokens=256,
+            max_new_tokens=128,
         )
-        return _pipeline
 
 
 def generate_text(prompt: str, max_tokens: Optional[int] = None) -> str:
-    """
-    Generate text from a prompt using the loaded LLM.
+    """Generate text from a prompt. Returns empty string on error."""
+    global _pipeline
+    if _pipeline is None:
+        load_model()
 
-    Args:
-        prompt: The input text/instruction for the model
-        max_tokens: Optional override for max new tokens
-
-    Returns:
-        Generated text string
-    """
     try:
-        pipe = get_llm_pipeline()
         from config.settings import LLM_MAX_NEW_TOKENS
-
-        kwargs = {}
-        if max_tokens:
-            kwargs["max_new_tokens"] = max_tokens
-        else:
-            kwargs["max_new_tokens"] = LLM_MAX_NEW_TOKENS
-
-        # Truncate prompt to avoid token limit issues
-        prompt = prompt[:3000]
-
-        result = pipe(prompt, **kwargs)
-
-        if isinstance(result, list) and len(result) > 0:
-            output = result[0].get("generated_text", "")
-            return output.strip()
-
-        return ""
-
+        kwargs = {"max_new_tokens": max_tokens or LLM_MAX_NEW_TOKENS}
+        result = _pipeline(prompt[:2500], **kwargs)
+        if isinstance(result, list) and result:
+            return result[0].get("generated_text", "").strip()
     except Exception as e:
         logger.error(f"Text generation error: {e}")
-        return f"Error generating text: {str(e)}"
+    return ""

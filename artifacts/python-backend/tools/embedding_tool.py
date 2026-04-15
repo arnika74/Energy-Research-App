@@ -1,6 +1,5 @@
 """
-Embedding tool using sentence-transformers/all-MiniLM-L6-v2.
-Provides vector embeddings for semantic search in the FAISS knowledge base.
+Sentence-transformer embeddings. Loaded once at startup and reused.
 """
 
 import logging
@@ -10,63 +9,38 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-_embedding_model = None
+_model = None
 
 
-def get_embedding_model():
-    """Load the sentence transformer model (singleton)."""
-    global _embedding_model
-    if _embedding_model is not None:
-        return _embedding_model
-
+def load_embedding_model() -> None:
+    """Preload the embedding model. Call once at startup."""
+    global _model
+    if _model is not None:
+        return
     from config.settings import EMBEDDING_MODEL_NAME
-
-    logger.info(f"Loading embedding model: {EMBEDDING_MODEL_NAME}")
-
     from sentence_transformers import SentenceTransformer
+    logger.info(f"Loading embedding model: {EMBEDDING_MODEL_NAME}")
+    _model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+    logger.info("Embedding model loaded")
 
-    _embedding_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-    logger.info("Embedding model loaded successfully")
-    return _embedding_model
+
+def _get_model():
+    global _model
+    if _model is None:
+        load_embedding_model()
+    return _model
 
 
 def embed_text(text: str) -> np.ndarray:
-    """
-    Generate a vector embedding for a single text string.
-
-    Args:
-        text: Input text to embed
-
-    Returns:
-        numpy array of shape (embedding_dim,)
-    """
-    model = get_embedding_model()
-    embedding = model.encode(text, convert_to_numpy=True, normalize_embeddings=True)
-    return embedding
+    return _get_model().encode(text, convert_to_numpy=True, normalize_embeddings=True)
 
 
 def embed_texts(texts: List[str]) -> np.ndarray:
-    """
-    Generate embeddings for a list of texts in batch.
-
-    Args:
-        texts: List of input strings
-
-    Returns:
-        numpy array of shape (n_texts, embedding_dim)
-    """
-    model = get_embedding_model()
-    embeddings = model.encode(
-        texts,
-        convert_to_numpy=True,
-        normalize_embeddings=True,
-        batch_size=32,
-        show_progress_bar=False,
+    return _get_model().encode(
+        texts, convert_to_numpy=True, normalize_embeddings=True,
+        batch_size=32, show_progress_bar=False,
     )
-    return embeddings
 
 
 def get_embedding_dimension() -> int:
-    """Return the embedding dimension of the loaded model."""
-    model = get_embedding_model()
-    return model.get_sentence_embedding_dimension()
+    return _get_model().get_sentence_embedding_dimension()

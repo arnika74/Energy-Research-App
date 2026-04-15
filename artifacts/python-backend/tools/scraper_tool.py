@@ -1,164 +1,94 @@
 """
-Web Scraping Tool using BeautifulSoup for extracting text content from websites.
-Handles timeouts, errors, and content cleaning gracefully.
+Concurrent web scraper using BeautifulSoup.
+Fetches multiple URLs in parallel via a thread pool for fast execution.
 """
 
 import logging
-import time
 import re
-from typing import Optional, Dict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Dict, List
 
 import requests
 from bs4 import BeautifulSoup
 
-from config.settings import REQUEST_TIMEOUT, MAX_CONTENT_LENGTH, SCRAPER_DELAY
+from config.settings import REQUEST_TIMEOUT, MAX_CONTENT_LENGTH, SCRAPER_MAX_WORKERS
 
 logger = logging.getLogger(__name__)
 
-# User-Agent header to avoid bot detection
-HEADERS = {
+_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
+    "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
 }
 
-# Domains to skip (paywalled, login-required, etc.)
-SKIP_DOMAINS = [
-    "jstor.org",
-    "nature.com/articles",
-    "sciencedirect.com",
-    "springer.com",
-    "facebook.com",
-    "twitter.com",
-    "instagram.com",
-    "linkedin.com",
-    "youtube.com",
+_SKIP_DOMAINS = [
+    "jstor.org", "sciencedirect.com", "springer.com", "nature.com/articles",
+    "facebook.com", "twitter.com", "instagram.com", "linkedin.com", "youtube.com",
+    "tiktok.com", "reddit.com",
 ]
 
 
-def should_skip_url(url: str) -> bool:
-    """Check if a URL should be skipped based on domain blacklist."""
-    return any(domain in url for domain in SKIP_DOMAINS)
+def _should_skip(url: str) -> bool:
+    return any(d in url for d in _SKIP_DOMAINS)
 
 
-def extract_text_from_url(url: str) -> Optional[str]:
-    """
-    Fetch and extract clean text content from a URL.
-
-    Args:
-        url: The URL to scrape
-
-    Returns:
-        Cleaned text content or None if scraping failed
-    """
-    if should_skip_url(url):
-        logger.debug(f"Skipping URL (blacklisted domain): {url}")
-        return None
-
+def _fetch_one(url: str) -> tuple[str, str | None]:
+    """Fetch and extract text from a single URL. Returns (url, text|None)."""
+    if _should_skip(url) or not url.startswith("http"):
+        return url, None
     try:
-        time.sleep(SCRAPER_DELAY)  # Polite delay between requests
-
-        response = requests.get(
-            url,
-            headers=HEADERS,
-            timeout=REQUEST_TIMEOUT,
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-
-        content_type = response.headers.get("Content-Type", "")
-        if "text/html" not in content_type and "text/plain" not in content_type:
-            logger.debug(f"Skipping non-HTML content: {url}")
-            return None
-
-        return clean_html_content(response.text)
-
-    except requests.exceptions.Timeout:
-        logger.warning(f"Timeout scraping: {url}")
-        return None
-    except requests.exceptions.ConnectionError:
-        logger.warning(f"Connection error scraping: {url}")
-        return None
+        r = requests.get(url, headers=_HEADERS, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+        r.raise_for_status()
+        if "text/html" not in r.headers.get("Content-Type", ""):
+            return url, None
+        return url, _extract_text(r.text)
     except Exception as e:
-        logger.warning(f"Error scraping {url}: {e}")
-        return None
+        logger.debug(f"Scrape failed {url}: {e}")
+        return url, None
 
 
-def clean_html_content(html: str) -> str:
-    """
-    Parse HTML and extract clean, readable text content.
-
-    Args:
-        html: Raw HTML string
-
-    Returns:
-        Cleaned text content
-    """
+def _extract_text(html: str) -> str | None:
+    """Parse HTML and return clean text, or None if too short."""
     soup = BeautifulSoup(html, "html.parser")
-
-    # Remove unwanted elements
-    for tag in soup(["script", "style", "nav", "footer", "header",
-                      "aside", "advertisement", "iframe", "noscript"]):
+    for tag in soup(["script", "style", "nav", "footer", "header", "aside", "iframe", "noscript"]):
         tag.decompose()
 
-    # Try to find main content area first
-    main_content = (
+    body = (
         soup.find("main")
         or soup.find("article")
         or soup.find(class_=re.compile(r"content|article|post|main", re.I))
         or soup.find("body")
     )
-
-    if main_content:
-        text = main_content.get_text(separator="\n", strip=True)
-    else:
-        text = soup.get_text(separator="\n", strip=True)
-
-    # Clean up whitespace
-    lines = [line.strip() for line in text.splitlines()]
-    lines = [line for line in lines if len(line) > 30]  # Remove short/empty lines
+    raw = (body or soup).get_text(separator="\n", strip=True)
+    lines = [l.strip() for l in raw.splitlines() if len(l.strip()) > 40]
     text = "\n".join(lines)
-
-    # Truncate to max length
-    if len(text) > MAX_CONTENT_LENGTH:
-        text = text[:MAX_CONTENT_LENGTH] + "..."
-
-    return text
+    if len(text) < 200:
+        return None
+    return text[:MAX_CONTENT_LENGTH]
 
 
-def scrape_multiple_urls(urls: list, max_sources: int = 5) -> Dict[str, str]:
+def scrape_urls(urls: List[str], max_sources: int = 5) -> Dict[str, str]:
     """
-    Scrape text from multiple URLs, returning a dict of url -> content.
-
-    Args:
-        urls: List of URLs to scrape
-        max_sources: Maximum number of successful sources to collect
-
-    Returns:
-        Dict mapping url to extracted text content
+    Concurrently scrape multiple URLs.
+    Returns {url: content} for successful fetches, up to max_sources.
     """
-    results = {}
-    attempted = 0
+    results: Dict[str, str] = {}
+    workers = min(SCRAPER_MAX_WORKERS, len(urls))
 
-    for url in urls:
-        if len(results) >= max_sources:
-            break
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(_fetch_one, url): url for url in urls}
+        for future in as_completed(futures):
+            if len(results) >= max_sources:
+                # Cancel remaining futures
+                for f in futures:
+                    f.cancel()
+                break
+            url, text = future.result()
+            if text:
+                results[url] = text
 
-        if not url or not url.startswith("http"):
-            continue
-
-        attempted += 1
-        logger.info(f"Scraping ({len(results)+1}/{max_sources}): {url}")
-
-        content = extract_text_from_url(url)
-        if content and len(content) > 200:
-            results[url] = content
-
-    logger.info(
-        f"Successfully scraped {len(results)} out of {attempted} attempted URLs"
-    )
+    logger.info(f"Scraped {len(results)}/{len(urls)} URLs successfully")
     return results

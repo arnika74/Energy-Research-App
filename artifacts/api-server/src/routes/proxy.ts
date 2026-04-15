@@ -1,52 +1,64 @@
+/**
+ * Proxy routes — forward /api/research, /api/history, /api/search to the Python backend.
+ * Uses Node's native http module for stability and explicit timeout control.
+ */
+
 import { Router, type IRouter, type Request, type Response } from "express";
 import http from "http";
 
 const router: IRouter = Router();
 
 const PYTHON_HOST = "localhost";
-const PYTHON_PORT = parseInt(process.env["PYTHON_API_PORT"] || "8000", 10);
+const PYTHON_PORT = parseInt(process.env["PYTHON_API_PORT"] ?? "8000", 10);
+const PROXY_TIMEOUT_MS = 60_000; // 60 s — allows for model inference time
 
-function proxyToPython(req: Request, res: Response, pythonPath: string): void {
+function proxy(req: Request, res: Response, pythonPath: string): void {
   const options: http.RequestOptions = {
     hostname: PYTHON_HOST,
     port: PYTHON_PORT,
     path: pythonPath,
     method: req.method,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    timeout: PROXY_TIMEOUT_MS,
   };
 
+  const body = req.method !== "GET" && req.body ? JSON.stringify(req.body) : null;
+
   const proxyReq = http.request(options, (proxyRes) => {
-    res.status(proxyRes.statusCode || 200);
-    Object.entries(proxyRes.headers).forEach(([key, value]) => {
-      if (value) res.setHeader(key, value);
-    });
-    proxyRes.pipe(res);
+    const status = proxyRes.statusCode ?? 200;
+    res.status(status);
+    const ct = proxyRes.headers["content-type"];
+    if (ct) res.setHeader("Content-Type", ct);
+    proxyRes.pipe(res, { end: true });
   });
 
-  proxyReq.on("error", (err) => {
-    res.status(502).json({
-      error: "Python backend unavailable",
-      detail: err.message,
-    });
+  proxyReq.setTimeout(PROXY_TIMEOUT_MS, () => {
+    proxyReq.destroy();
+    if (!res.headersSent) {
+      res.status(504).json({ error: "Python backend timed out", detail: "Request exceeded 60 s" });
+    }
   });
 
-  if (req.method !== "GET" && req.body) {
-    proxyReq.write(JSON.stringify(req.body));
+  proxyReq.on("error", (err: NodeJS.ErrnoException) => {
+    if (!res.headersSent) {
+      const isDown = err.code === "ECONNREFUSED" || err.code === "ECONNRESET";
+      res.status(isDown ? 503 : 502).json({
+        error: isDown ? "Python backend is unavailable" : "Proxy error",
+        detail: err.message,
+      });
+    }
+  });
+
+  if (body) {
+    proxyReq.write(body);
   }
   proxyReq.end();
 }
 
-router.post("/research", (req, res) => proxyToPython(req, res, "/research"));
-router.get("/research/:jobId", (req, res) =>
-  proxyToPython(req, res, `/research/${req.params["jobId"]}`)
-);
-router.get("/history", (req, res) => proxyToPython(req, res, "/history"));
-router.get("/history/:reportId", (req, res) =>
-  proxyToPython(req, res, `/history/${req.params["reportId"]}`)
-);
-router.post("/search", (req, res) => proxyToPython(req, res, "/search"));
+router.post("/research", (req, res) => proxy(req, res, "/research"));
+router.get("/research/:id", (req, res) => proxy(req, res, `/research/${req.params["id"]}`));
+router.get("/history", (req, res) => proxy(req, res, "/history"));
+router.get("/history/:id", (req, res) => proxy(req, res, `/history/${req.params["id"]}`));
+router.post("/search", (req, res) => proxy(req, res, "/search"));
 
 export default router;

@@ -1,77 +1,38 @@
 """
-Research Agent — responsible for searching the web and extracting content.
-Pipeline: DuckDuckGo search → URL collection → Web scraping → Content cleaning
+Research Agent — searches the web and extracts content concurrently.
 """
 
 import logging
-from typing import List, Dict, Callable, Optional
+from typing import Callable, Dict, Optional
 
-from tools.search_tool import search_energy_topics
-from tools.scraper_tool import scrape_multiple_urls
+from tools.search_tool import search
+from tools.scraper_tool import scrape_urls
 
 logger = logging.getLogger(__name__)
 
 
 class ResearchAgent:
-    """
-    Agent 1: Performs web search and content extraction.
-    Collects raw information from multiple web sources.
-    """
-
     def __init__(self, max_sources: int = 5):
-        """
-        Initialize the Research Agent.
-
-        Args:
-            max_sources: Maximum number of web sources to scrape
-        """
         self.max_sources = max_sources
 
-    def run(
-        self,
-        query: str,
-        progress_callback: Optional[Callable[[str], None]] = None,
-    ) -> Dict:
-        """
-        Execute the full research pipeline for a given query.
-
-        Args:
-            query: The energy research query from the user
-            progress_callback: Optional function to report progress status
-
-        Returns:
-            Dict with search_results, scraped_content, urls
-        """
+    def run(self, query: str, progress_cb: Optional[Callable[[str], None]] = None) -> Dict:
         def notify(msg: str):
             logger.info(msg)
-            if progress_callback:
-                progress_callback(msg)
+            if progress_cb:
+                progress_cb(msg)
 
-        notify(f"🔍 Searching the web for: {query}")
-
-        # Step 1: Search DuckDuckGo
-        search_results = search_energy_topics(query, max_results=self.max_sources + 3)
+        notify("🔍 Searching the web...")
+        search_results = search(query, max_results=self.max_sources + 3)
 
         if not search_results:
             logger.warning("No search results found")
-            return {
-                "search_results": [],
-                "scraped_content": {},
-                "urls": [],
-            }
+            return {"search_results": [], "scraped_content": {}, "urls": []}
 
-        notify(f"📋 Found {len(search_results)} search results, extracting content...")
-
-        # Step 2: Extract URLs from search results
+        notify(f"📥 Fetching content from {len(search_results)} sources...")
         urls = [r["url"] for r in search_results if r.get("url")]
+        scraped_content = scrape_urls(urls, max_sources=self.max_sources)
 
-        # Step 3: Scrape content from web pages
-        scraped_content = scrape_multiple_urls(urls, max_sources=self.max_sources)
-
-        notify(
-            f"✅ Extracted content from {len(scraped_content)} sources"
-        )
-
+        notify(f"✅ Collected {len(scraped_content)} sources")
         return {
             "search_results": search_results,
             "scraped_content": scraped_content,

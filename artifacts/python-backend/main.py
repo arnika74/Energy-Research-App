@@ -1,6 +1,6 @@
 """
-FastAPI backend for the Autonomous Energy Researcher Agent.
-Manages research jobs, serves results, and interfaces with the Python AI pipeline.
+FastAPI backend — Autonomous Energy Researcher Agent.
+Models are preloaded at startup for fast first-request response.
 """
 
 import logging
@@ -8,55 +8,79 @@ import os
 import sys
 import threading
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(__file__))
 
-from config.settings import API_HOST, API_PORT, CORS_ORIGINS
 from agents.research_agent import ResearchAgent
 from agents.analysis_agent import AnalysisAgent
 from agents.summary_agent import SummaryAgent
 from database.faiss_store import get_faiss_store
 from database.storage import save_report, load_report, list_reports
+from config.settings import API_HOST, API_PORT
 
-# Configure structured logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# ─── FastAPI App ──────────────────────────────────────────────────────
-app = FastAPI(
-    title="Autonomous Energy Researcher Agent",
-    description="Multi-agent AI system for energy research",
-    version="1.0.0",
-)
 
+def _preload_models():
+    """Preload LLM and embedding models at startup in a background thread."""
+    try:
+        logger.info("Preloading models...")
+        from models.llm_model import load_model
+        from tools.embedding_tool import load_embedding_model
+        load_embedding_model()
+        load_model()
+        logger.info("All models ready")
+    except Exception as e:
+        logger.error(f"Model preload failed: {e}")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    threading.Thread(target=_preload_models, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="Energy Researcher API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ─── In-Memory Job Store ──────────────────────────────────────────────
-# Maps job_id -> job status dict
+# In-memory job store
 _jobs: Dict[str, Dict] = {}
-_jobs_lock = threading.Lock()
+_lock = threading.Lock()
 
 
-# ─── Pydantic Models ──────────────────────────────────────────────────
+# ─── Request models ──────────────────────────────────────────────────
 class ResearchRequest(BaseModel):
     query: str
     maxSources: int = 5
+
+    @field_validator("query")
+    @classmethod
+    def query_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 3:
+            raise ValueError("Query must be at least 3 characters")
+        return v
+
+    @field_validator("maxSources")
+    @classmethod
+    def clamp_sources(cls, v: int) -> int:
+        return max(2, min(v, 8))
 
 
 class SearchRequest(BaseModel):
@@ -64,134 +88,88 @@ class SearchRequest(BaseModel):
     topK: int = 3
 
 
-# ─── Background Research Runner ───────────────────────────────────────
-def run_research_pipeline(job_id: str, query: str, max_sources: int):
-    """
-    Run the full multi-agent research pipeline in a background thread.
-    Updates job status throughout the process.
-    """
-
-    def update_progress(msg: str):
-        with _jobs_lock:
+# ─── Pipeline runner ─────────────────────────────────────────────────
+def _run_pipeline(job_id: str, query: str, max_sources: int):
+    def progress(msg: str):
+        with _lock:
             if job_id in _jobs:
                 _jobs[job_id]["progress"] = msg
 
     try:
-        with _jobs_lock:
+        with _lock:
             _jobs[job_id]["status"] = "running"
-            _jobs[job_id]["progress"] = "Starting research pipeline..."
 
-        # Agent 1: Research
-        research_agent = ResearchAgent(max_sources=max_sources)
-        research_data = research_agent.run(query, progress_callback=update_progress)
+        research_data = ResearchAgent(max_sources=max_sources).run(query, progress_cb=progress)
+        analysis_data = AnalysisAgent().run(query, research_data, progress_cb=progress)
 
-        # Agent 2: Analysis
-        analysis_agent = AnalysisAgent()
-        analysis_data = analysis_agent.run(
-            query, research_data, progress_callback=update_progress
-        )
+        progress("✍️ Generating structured report...")
+        report = SummaryAgent().run(query, analysis_data, progress_cb=progress)
 
-        # Agent 3: Summary / Report Generation
-        summary_agent = SummaryAgent()
-        update_progress("✍️ Generating structured report with AI...")
-        report = summary_agent.run(
-            query, analysis_data, progress_callback=update_progress
-        )
-
-        # Save to local storage
         save_report(report)
 
-        # Add to FAISS vector store
-        update_progress("💾 Saving to knowledge repository...")
-        faiss_store = get_faiss_store()
-        faiss_store.add_report(report)
+        progress("💾 Saving to knowledge base...")
+        get_faiss_store().add_report(report)
 
-        # Mark job as complete
-        with _jobs_lock:
-            _jobs[job_id]["status"] = "completed"
-            _jobs[job_id]["progress"] = "Research complete!"
-            _jobs[job_id]["report"] = report
-            _jobs[job_id]["completedAt"] = datetime.now(timezone.utc).isoformat()
-
-        logger.info(f"Research job {job_id} completed successfully")
+        with _lock:
+            _jobs[job_id].update(
+                status="completed",
+                progress="Done!",
+                report=report,
+                completedAt=datetime.now(timezone.utc).isoformat(),
+            )
+        logger.info(f"Job {job_id} completed")
 
     except Exception as e:
-        logger.error(f"Research job {job_id} failed: {e}", exc_info=True)
-        with _jobs_lock:
-            _jobs[job_id]["status"] = "failed"
-            _jobs[job_id]["error"] = str(e)
-            _jobs[job_id]["completedAt"] = datetime.now(timezone.utc).isoformat()
+        logger.error(f"Job {job_id} failed: {e}", exc_info=True)
+        with _lock:
+            _jobs[job_id].update(
+                status="failed",
+                error=str(e),
+                completedAt=datetime.now(timezone.utc).isoformat(),
+            )
 
 
-# ─── API Routes ───────────────────────────────────────────────────────
-
+# ─── Routes ──────────────────────────────────────────────────────────
 @app.get("/healthz")
-def health_check():
-    """Health check endpoint."""
+def health():
     return {"status": "ok"}
 
 
 @app.post("/research")
 def start_research(req: ResearchRequest):
-    """
-    Start a new research job asynchronously.
-    Returns a job ID that can be polled for status.
-    """
-    if not req.query or len(req.query.strip()) < 3:
-        raise HTTPException(status_code=400, detail="Query must be at least 3 characters")
-
     job_id = str(uuid.uuid4())
-    started_at = datetime.now(timezone.utc).isoformat()
-
-    with _jobs_lock:
+    with _lock:
         _jobs[job_id] = {
             "jobId": job_id,
             "status": "pending",
-            "query": req.query.strip(),
+            "query": req.query,
             "progress": "Queued...",
             "report": None,
             "error": None,
-            "startedAt": started_at,
+            "startedAt": datetime.now(timezone.utc).isoformat(),
             "completedAt": None,
         }
-
-    # Run pipeline in background thread
-    thread = threading.Thread(
-        target=run_research_pipeline,
-        args=(job_id, req.query.strip(), req.maxSources),
-        daemon=True,
-    )
-    thread.start()
-
-    return {
-        "jobId": job_id,
-        "status": "pending",
-        "message": f"Research job started for query: {req.query}",
-    }
+    threading.Thread(target=_run_pipeline, args=(job_id, req.query, req.maxSources), daemon=True).start()
+    return {"jobId": job_id, "status": "pending", "message": f"Started: {req.query}"}
 
 
 @app.get("/research/{job_id}")
-def get_research_job(job_id: str):
-    """Get the status and result of a research job."""
-    with _jobs_lock:
+def get_job(job_id: str):
+    with _lock:
         job = _jobs.get(job_id)
-
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-
     return job
 
 
 @app.get("/history")
 def get_history():
-    """Return a list of all stored research reports (summaries)."""
     reports = list_reports()
     return {"reports": reports, "total": len(reports)}
 
 
 @app.get("/history/{report_id}")
 def get_report(report_id: str):
-    """Return a specific research report by ID."""
     report = load_report(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
@@ -200,30 +178,24 @@ def get_report(report_id: str):
 
 @app.post("/search")
 def semantic_search(req: SearchRequest):
-    """Perform semantic search across stored research reports."""
-    faiss_store = get_faiss_store()
-    results = faiss_store.search(req.query, top_k=req.topK)
-
+    store = get_faiss_store()
+    raw = store.search(req.query, top_k=max(1, req.topK))
     return {
         "results": [
             {
                 "reportId": r.get("report_id", ""),
                 "query": r.get("query", ""),
                 "title": r.get("title", ""),
-                "score": r.get("score", 0.0),
+                "score": round(float(r.get("score", 0)), 4),
                 "snippet": r.get("snippet", ""),
                 "createdAt": r.get("created_at", ""),
             }
-            for r in results
+            for r in raw
         ],
-        "total": len(results),
+        "total": len(raw),
     }
 
 
-# ─── Entry Point ──────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-
-    port = int(os.getenv("PYTHON_API_PORT", str(API_PORT)))
-    logger.info(f"Starting Autonomous Energy Researcher Agent on port {port}")
-    uvicorn.run(app, host=API_HOST, port=port, log_level="info")
+    uvicorn.run(app, host=API_HOST, port=API_PORT, log_level="info")
