@@ -128,7 +128,8 @@ or: venv\Scripts\activate  (Windows)
 
 # Start the backend
 PYTHON_API_PORT=8000 python main.py #macOS/Linux
-$env:PYTHON_API_PORT=8000; python main.py #windows
+$env:PYTHON_API_PORT=8000; python main.py 
+#windows
 ```
 
 You should see:
@@ -151,7 +152,8 @@ Open **Terminal 2**:
 ```bash
 # From project root
 PYTHON_API_PORT=8000 pnpm --filter @workspace/api-server run dev #macOS/Linux
-$env:PYTHON_API_PORT=8000; pnpm --filter @workspace/api-server run dev #windows
+$env:PYTHON_API_PORT=8000; pnpm --filter @workspace/api-server run dev 
+#windows
 ```
 
 You should see:

@@ -126,5 +126,61 @@
     "created_at": "2026-04-15T14:37:16.169684+00:00",
     "snippet": "This report analyzes wind vs solar energy using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
     "source_count": 8
+  },
+  {
+    "report_id": "2ea22a40-beab-4999-b0bf-0bfe6b76ef48",
+    "query": "What is solar energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T15:10:26.882517+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "c546c1c2-255b-4b48-8d50-2a4ff832a7a5",
+    "query": "What is solar energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T16:14:39.818867+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "3e2b5b7e-297b-4492-9bb2-afd83256ba0b",
+    "query": "what is thermal energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T16:17:23.921396+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "dba3fc79-3c63-41a4-90d6-28a7bcfef521",
+    "query": "What is thermal energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T16:18:24.804802+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "9a229301-82bb-4006-b3eb-36dfc042da2c",
+    "query": "What is thermal energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T16:19:17.367465+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "d3ee5e29-b6bb-46f5-859b-a8cbd4d09006",
+    "query": "What is thermal energy?",
+    "title": "Energy Report",
+    "created_at": "2026-04-15T16:20:43.679348+00:00",
+    "snippet": "",
+    "source_count": 5
+  },
+  {
+    "report_id": "effab6da-a490-46ce-8f8a-902e11be4fdf",
+    "query": "Latest advancements in solid-state battery technology",
+    "title": "Energy Research: Latest advancements in solid-state battery technology",
+    "created_at": "2026-04-15T16:45:44.920579+00:00",
+    "snippet": "This report explains Latest advancements in solid-state battery technology using collected research data.",
+    "source_count": 5
   }
 ]
