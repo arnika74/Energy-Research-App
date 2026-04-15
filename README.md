@@ -124,10 +124,11 @@ cd artifacts/python-backend
 
 # Activate your virtual environment if not already active
 source venv/bin/activate   # macOS/Linux
-# or: venv\Scripts\activate  (Windows)
+or: venv\Scripts\activate  (Windows)
 
 # Start the backend
-PYTHON_API_PORT=8000 python main.py
+PYTHON_API_PORT=8000 python main.py #macOS/Linux
+$env:PYTHON_API_PORT=8000; python main.py #windows
 ```
 
 You should see:
@@ -149,7 +150,8 @@ Open **Terminal 2**:
 
 ```bash
 # From project root
-PYTHON_API_PORT=8000 pnpm --filter @workspace/api-server run dev
+PYTHON_API_PORT=8000 pnpm --filter @workspace/api-server run dev #macOS/Linux
+$env:PYTHON_API_PORT=8000; pnpm --filter @workspace/api-server run dev #windows
 ```
 
 You should see:

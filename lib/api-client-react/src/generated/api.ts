@@ -42,7 +42,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * @summary Health check
  */
 export const getHealthCheckUrl = () => {
-  return `/api/healthz`;
+  return `/healthz`;
 };
 
 export const healthCheck = async (
@@ -55,7 +55,7 @@ export const healthCheck = async (
 };
 
 export const getHealthCheckQueryKey = () => {
-  return [`/api/healthz`] as const;
+  return [`/healthz`] as const;
 };
 
 export const getHealthCheckQueryOptions = <
@@ -118,7 +118,7 @@ export function useHealthCheck<
  * @summary Start a research job
  */
 export const getStartResearchUrl = () => {
-  return `/api/research`;
+  return `/research`;
 };
 
 export const startResearch = async (
@@ -204,7 +204,7 @@ export const useStartResearch = <
  * @summary Get research job status and result
  */
 export const getGetResearchJobUrl = (jobId: string) => {
-  return `/api/research/${jobId}`;
+  return `/research/${jobId}`;
 };
 
 export const getResearchJob = async (
@@ -218,7 +218,7 @@ export const getResearchJob = async (
 };
 
 export const getGetResearchJobQueryKey = (jobId: string) => {
-  return [`/api/research/${jobId}`] as const;
+  return [`/research/${jobId}`] as const;
 };
 
 export const getGetResearchJobQueryOptions = <
@@ -291,7 +291,7 @@ export function useGetResearchJob<
  * @summary Get all stored research reports
  */
 export const getGetResearchHistoryUrl = () => {
-  return `/api/history`;
+  return `/history`;
 };
 
 export const getResearchHistory = async (
@@ -304,7 +304,7 @@ export const getResearchHistory = async (
 };
 
 export const getGetResearchHistoryQueryKey = () => {
-  return [`/api/history`] as const;
+  return [`/history`] as const;
 };
 
 export const getGetResearchHistoryQueryOptions = <
@@ -366,7 +366,7 @@ export function useGetResearchHistory<
  * @summary Get a specific stored research report
  */
 export const getGetResearchReportUrl = (reportId: string) => {
-  return `/api/history/${reportId}`;
+  return `/history/${reportId}`;
 };
 
 export const getResearchReport = async (
@@ -380,7 +380,7 @@ export const getResearchReport = async (
 };
 
 export const getGetResearchReportQueryKey = (reportId: string) => {
-  return [`/api/history/${reportId}`] as const;
+  return [`/history/${reportId}`] as const;
 };
 
 export const getGetResearchReportQueryOptions = <
@@ -455,7 +455,7 @@ export function useGetResearchReport<
  * @summary Semantic search across stored research
  */
 export const getSemanticSearchUrl = () => {
-  return `/api/search`;
+  return `/search`;
 };
 
 export const semanticSearch = async (

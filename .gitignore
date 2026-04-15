@@ -1,49 +1,82 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# compiled output
-dist
-tmp
-out-tsc
+# =========================
+# NODE / FRONTEND / API
+# =========================
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+out/
 *.tsbuildinfo
-.expo
-.expo-shared
 
-# dependencies
-node_modules
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# Env files (IMPORTANT 🔒)
+.env
+.env.*
+!.env.example
 
-# IDE - VSCode
+# =========================
+# PYTHON BACKEND
+# =========================
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Python env files
+.env
+.env.*
+
+# =========================
+# REPLIT / LOCAL FILES
+# =========================
+.local/
+.cache/
+.replit
+.replit-artifact/
+
+# =========================
+# BUILD / GENERATED FILES
+# =========================
+dist/
+tmp/
+coverage/
+*.log
+
+# =========================
+# IDE / EDITOR
+# =========================
 .vscode/*
 !.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
 !.vscode/extensions.json
+.idea/
+*.sublime-workspace
+*.project
+*.classpath
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
-
-# System Files
+# =========================
+# OS FILES
+# =========================
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
+# =========================
+# DATABASE / STORAGE
+# =========================
+*.sql
+*.db
+data/
+database/
 
-# Replit
-.cache/
-.local/
+# =========================
+# MISC
+# =========================
+attached_assets/

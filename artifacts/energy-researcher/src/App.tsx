@@ -10,6 +10,10 @@ import ReportView from "@/pages/ReportView";
 import SearchPage from "@/pages/Search";
 import NotFound from "@/pages/not-found";
 
+import { setBaseUrl } from "@workspace/api-client-react";
+
+setBaseUrl("http://localhost:8000"); // or your backend URL
+
 // Initialize React Query client with sane defaults
 const queryClient = new QueryClient({
   defaultOptions: {
