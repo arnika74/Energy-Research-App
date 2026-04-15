@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "BX7oKfU-GSdmWY6067pDf"
+uri = "file://README.md"
+type = "text"
+title = "Local Setup Guide — Autonomous Energy Researcher"

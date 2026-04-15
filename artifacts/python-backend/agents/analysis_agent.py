@@ -1,6 +1,7 @@
 """
-Analysis Agent — filters content and extracts key sentences.
+Analysis Agent — filters content, extracts key sentences, and builds references.
 Falls back to search snippets when scraped content is sparse.
+References are always populated from search results regardless of scraping success.
 """
 
 import logging
@@ -37,44 +38,61 @@ class AnalysisAgent:
         query_terms = {w.lower() for w in query.split() if len(w) > 3}
         all_terms = _ENERGY_TERMS | query_terms
 
-        # Filter scraped content by relevance score
-        filtered = {}
+        # Filter scraped pages by relevance score
+        filtered: Dict[str, str] = {}
         for url, text in scraped.items():
             low = text.lower()
             score = sum(low.count(t) for t in all_terms)
             if score > 2:
                 filtered[url] = text
 
-        # Extract key points from filtered content
+        # Extract key sentences from filtered pages
         key_points = self._extract_key_points(filtered, all_terms)
 
-        # Fall back to search snippets if we don't have enough
-        if len(key_points) < 5:
-            for r in search_results:
-                snippet = r.get("snippet", "").strip()
-                if len(snippet) > 60 and snippet not in key_points:
-                    key_points.append(snippet)
+        # Always supplement with search snippets (ensures we have content even when scraping fails)
+        seen = set(key_points)
+        for r in search_results:
+            snippet = r.get("snippet", "").strip()
+            if len(snippet) > 60 and snippet not in seen:
+                key_points.append(snippet)
+                seen.add(snippet)
 
-        # Build references from search results
-        source_meta = [
-            {"url": r["url"], "title": r.get("title", r["url"])[:120], "snippet": r.get("snippet", "")[:200]}
-            for r in search_results
-            if r.get("url")
-        ][:10]
+        # References always include ALL search results (not just scraped ones)
+        # This guarantees references are never empty when search succeeds
+        source_meta: List[Dict] = []
+        seen_urls: set = set()
+        for r in search_results:
+            url = r.get("url", "")
+            if url and url not in seen_urls:
+                source_meta.append({
+                    "url": url,
+                    "title": r.get("title", url)[:120],
+                    "snippet": r.get("snippet", "")[:200],
+                })
+                seen_urls.add(url)
 
-        notify(f"✅ {len(key_points)} key points extracted")
-        return {"filtered_content": filtered, "key_points": key_points[:15], "source_metadata": source_meta}
+        # Also include successfully scraped URLs that weren't in search results
+        for url in filtered:
+            if url not in seen_urls:
+                source_meta.append({"url": url, "title": url, "snippet": ""})
+                seen_urls.add(url)
+
+        notify(f"✅ {len(key_points)} key points · {len(source_meta)} sources")
+        return {
+            "filtered_content": filtered,
+            "key_points": key_points[:15],
+            "source_metadata": source_meta[:10],
+        }
 
     def _extract_key_points(self, content: Dict[str, str], terms: set) -> List[str]:
-        points = []
-        seen = set()
+        points: List[str] = []
+        seen: set = set()
         for text in content.values():
             for sentence in re.split(r"(?<=[.!?])\s+", text):
                 s = sentence.strip()
                 if len(s) < 60 or len(s) > 400 or s in seen:
                     continue
-                low = s.lower()
-                if sum(1 for t in terms if t in low) >= 2:
+                if sum(1 for t in terms if t in s.lower()) >= 2:
                     seen.add(s)
                     points.append(s)
                 if len(points) >= 15:

@@ -46,5 +46,37 @@
     "created_at": "2026-04-15T09:54:56.011534+00:00",
     "snippet": "This report analyzes hydrogen fuel cell cars 2025 using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
     "source_count": 0
+  },
+  {
+    "report_id": "9528ebe9-cedb-4620-b12a-f0691f61bf43",
+    "query": "Economic impact of grid-scale energy storage in Europe",
+    "title": "Grid-scale energy storage in Europe: a review",
+    "created_at": "2026-04-15T09:56:52.976409+00:00",
+    "snippet": "This report analyzes Economic impact of grid-scale energy storage in Europe using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
+    "source_count": 0
+  },
+  {
+    "report_id": "a24bbb2d-1237-47e0-8ece-d0ad1a1313f5",
+    "query": "Thermal Energy",
+    "title": "Thermal energy: the role of the thermal energy system",
+    "created_at": "2026-04-15T10:00:23.437343+00:00",
+    "snippet": "This report analyzes Thermal Energy using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
+    "source_count": 0
+  },
+  {
+    "report_id": "95c3ae63-6607-444b-b1ed-461f130fb323",
+    "query": "offshore wind energy costs 2025",
+    "title": "The future of offshore wind energy",
+    "created_at": "2026-04-15T10:01:09.964948+00:00",
+    "snippet": "This report analyzes offshore wind energy costs 2025 using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
+    "source_count": 0
+  },
+  {
+    "report_id": "1bd256ba-177b-4724-8515-8f707c58601f",
+    "query": "solar panel efficiency improvements 2025",
+    "title": "Solar panel efficiency improvements 2025",
+    "created_at": "2026-04-15T10:03:12.338027+00:00",
+    "snippet": "This report analyzes solar panel efficiency improvements 2025 using data collected from multiple sources. The findings highlight current trends and developments in the energy sector.",
+    "source_count": 7
   }
 ]
