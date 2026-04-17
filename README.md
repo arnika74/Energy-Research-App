@@ -1,6 +1,26 @@
-# Autonomous Energy Researcher Agent
 
-An AI-powered research assistant that autonomously searches the web, extracts content from multiple sources, analyzes the data using a multi-agent pipeline, and generates a structured research report — all using **free, open-source tools**.
+# Energy Researcher App
+
+An AI-powered application that performs automated web research, analyzes content using a multi-agent pipeline, and generates structured reports.
+
+The system mimics a research assistant by combining web search, scraping, analysis, and summarization into a single workflow.
+
+---
+
+## 🧰 Tech Stack
+
+| Layer            | Technology                          |
+| ---------------- | ----------------------------------- |
+| Frontend         | React (Vite), Tailwind CSS          |
+| Backend          | FastAPI (Python), Node.js (Express) |
+| AI / LLM         | HuggingFace Transformers (Flan-T5)  |
+| Embeddings       | Sentence Transformers               |
+| Vector Database  | FAISS                               |
+| Web Scraping     | BeautifulSoup, Requests             |
+| Search Engine    | DuckDuckGo                          |
+| Containerization | Docker, Docker Compose              |
+| Cloud (Optional) | AWS                                 |
+| Architecture     | Multi-Agent System                  |
 
 ---
 
@@ -51,22 +71,62 @@ project/
 
 ---
 
-## Prerequisites
+## ⚙️ Prerequisites
 
-Install these before proceeding:
-
-| Tool | Version | Download |
-|------|---------|----------|
-| **Python** | 3.11+ | https://python.org/downloads |
-| **Node.js** | 18+ | https://nodejs.org |
-| **pnpm** | Latest | `npm install -g pnpm` |
-| **Git** | Any | https://git-scm.com |
-
-> **Note:** The first run downloads ~1 GB of AI model weights (HuggingFace models). After that, they are cached locally.
+| Tool    | Version |
+| ------- | ------- |
+| Python  | 3.11+   |
+| Node.js | 18+     |
+| pnpm    | Latest  |
+| Docker  | Latest  |
+| Git     | Any     |
 
 ---
 
-## Local Setup — Step by Step
+# 🐳 Running with Docker (Recommended)
+
+## Step 1: Clone Repository
+
+```bash
+git clone https://github.com/arnika74/Energy-Research-App.git
+cd Energy-Research-App
+```
+
+---
+
+## Step 2: Start All Services
+
+```bash
+docker compose up --build
+```
+
+---
+
+## Step 3: Run in Background (Optional)
+
+```bash
+docker compose up -d --build
+```
+
+---
+
+## 🌐 Application URLs
+
+| Service        | URL                   |
+| -------------- | --------------------- |
+| Frontend       | http://localhost:3000 |
+| API Server     | http://localhost:8080 |
+| Python Backend | http://localhost:8000 |
+
+---
+
+## 🛑 Stop Application
+
+```bash
+docker compose down
+```
+
+## 🖥️ Local Setup — Step by Step
 
 ### Step 1: Clone the repository
 
@@ -86,8 +146,10 @@ cd artifacts/python-backend
 python -m venv venv
 
 # Activate it
+
 # On macOS/Linux:
 source venv/bin/activate
+
 # On Windows:
 venv\Scripts\activate
 
@@ -95,23 +157,22 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-> This installs: FastAPI, sentence-transformers, transformers (HuggingFace), faiss-cpu, duckduckgo-search, beautifulsoup4, and others.
+> This installs FastAPI, sentence-transformers, HuggingFace transformers, faiss-cpu, duckduckgo-search, beautifulsoup4, and other dependencies.
 
 ---
 
 ### Step 3: Install Node.js dependencies
-
-Go back to the project root:
 
 ```bash
 cd ../..   # back to project root
 pnpm install
 ```
 
-This installs dependencies for all three Node.js packages:
-- `@workspace/api-server` — the Express proxy server
-- `@workspace/energy-researcher` — the React frontend
-- All shared libraries
+This installs dependencies for:
+
+* `@workspace/api-server` — Express proxy server
+* `@workspace/energy-researcher` — React frontend
+* Shared libraries
 
 ---
 
@@ -122,17 +183,19 @@ Open **Terminal 1**:
 ```bash
 cd artifacts/python-backend
 
-# Activate your virtual environment if not already active
-source venv/bin/activate   # macOS/Linux
-or: venv\Scripts\activate  (Windows)
+# Activate environment (if not active)
+source venv/bin/activate        # macOS/Linux
+# OR
+venv\Scripts\activate          # Windows
 
-# Start the backend
-PYTHON_API_PORT=8000 python main.py #macOS/Linux
-$env:PYTHON_API_PORT=8000; python main.py 
-#windows
+# Start backend
+PYTHON_API_PORT=8000 python main.py     # macOS/Linux
+# OR
+$env:PYTHON_API_PORT=8000; python main.py   # Windows
 ```
 
 You should see:
+
 ```
 Preloading models...
 Embedding model loaded
@@ -141,7 +204,7 @@ All models ready
 Uvicorn running on http://0.0.0.0:8000
 ```
 
-> The first startup takes 30–60 seconds while AI models download and load. Subsequent startups are much faster (models are cached).
+> First startup may take 30–60 seconds due to model loading.
 
 ---
 
@@ -151,12 +214,13 @@ Open **Terminal 2**:
 
 ```bash
 # From project root
-PYTHON_API_PORT=8000 pnpm --filter @workspace/api-server run dev #macOS/Linux
-$env:PYTHON_API_PORT=8000; pnpm --filter @workspace/api-server run dev 
-#windows
+PYTHON_API_PORT=8000 pnpm --filter @workspace/api-server run dev     # macOS/Linux
+# OR
+$env:PYTHON_API_PORT=8000; pnpm --filter @workspace/api-server run dev   # Windows
 ```
 
 You should see:
+
 ```
 Server listening on port 8080
 ```
@@ -173,119 +237,67 @@ pnpm --filter @workspace/energy-researcher run dev
 ```
 
 You should see:
+
 ```
-VITE ready in 600ms
+VITE ready
 Local: http://localhost:5173/
 ```
 
 ---
 
-### Step 7: Open the app
+### Step 7: Open the App
 
-Visit **http://localhost:5173** in your browser.
+Visit:
 
----
-
-## Configuration (Optional)
-
-Edit `artifacts/python-backend/config/settings.py` or set environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PYTHON_API_PORT` | `8000` | Port for the Python backend |
-| `LLM_MODEL_NAME` | `google/flan-t5-base` | HuggingFace model to use |
-| `LLM_MAX_NEW_TOKENS` | `256` | Max tokens generated per LLM call |
-| `REQUEST_TIMEOUT` | `5` | Per-URL scraping timeout (seconds) |
-| `MAX_CONTENT_LENGTH` | `1500` | Max characters extracted per webpage |
-| `SCRAPER_MAX_WORKERS` | `5` | Concurrent scraping threads |
-
-**To use a larger model** (better quality, slower):
-```bash
-LLM_MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.2 python main.py
-```
-> Mistral-7B requires ~14 GB RAM. Use `google/flan-t5-base` (default) or `google/flan-t5-small` for low-memory systems.
+👉 http://localhost:8000
 
 ---
 
-## How It Works
+## ⚠️ Common Issues
+
+| Issue                         | Solution                      |
+| ----------------------------- | ----------------------------- |
+| Container name already exists | `docker rm -f python-backend` |
+| Port already in use           | Kill process using port       |
+| Old containers conflict       | `docker container prune`      |
+
+---
+
+## 🧠 How It Works
 
 ```
 User Query
-  ↓
-Research Agent    → DuckDuckGo search (8 results) + concurrent scraping (5 URLs)
-  ↓
-Analysis Agent    → Relevance filtering + key sentence extraction + references
-  ↓
-Summary Agent     → 2 LLM calls: (title + intro), (conclusion)
-  ↓
-Storage           → JSON file saved + FAISS embedding indexed
-  ↓
-Frontend          → Report with Title, Introduction, Insights, Conclusion, References
-```
-
-**Typical execution time:** 5–15 seconds per query  
-**First run:** 30–90 seconds (model download + load)
-
----
-
-## API Endpoints
-
-The Python backend exposes these directly at `http://localhost:8000`:
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/healthz` | Health check |
-| `POST` | `/research` | Start a research job `{"query": "...", "maxSources": 5}` |
-| `GET` | `/research/{jobId}` | Poll job status and result |
-| `GET` | `/history` | List all stored reports |
-| `GET` | `/history/{reportId}` | Get a full report by ID |
-| `POST` | `/search` | Semantic search `{"query": "...", "topK": 3}` |
-
-The Node.js API server at port 8080 proxies all `/api/*` calls to the Python backend.
-
----
-
-## Troubleshooting
-
-**"Disk quota exceeded" during pip install**
-```bash
-pip cache purge
-pip install --no-cache-dir -r requirements.txt
-```
-
-**DuckDuckGo returns 0 results**  
-The search tool automatically retries 3 times with backoff. If it still fails, DuckDuckGo may be rate-limiting your IP. Wait 30 seconds and try again.
-
-**Python backend 502/503 from Node server**  
-Make sure the Python backend (Terminal 1) is running and listening on port 8000 before making API calls.
-
-**"CUDA out of memory"**  
-Set `LLM_DEVICE=cpu` or the model defaults to CPU automatically.
-
-**Port already in use**  
-Kill existing processes:
-```bash
-# macOS/Linux
-kill -9 $(lsof -ti:8000)
-kill -9 $(lsof -ti:8080)
-
-# Windows
-netstat -ano | findstr :8000
-taskkill /PID <pid> /F
+   ↓
+Research Agent → Web search + scraping
+   ↓
+Analysis Agent → Filters and extracts key points
+   ↓
+Summary Agent → Generates final report using LLM
+   ↓
+Storage → Saves report + FAISS indexing
+   ↓
+Frontend → Displays results
 ```
 
 ---
 
-## Tech Stack
+## 🔌 API Endpoints
 
-| Layer | Technology |
-|-------|-----------|
-| **AI / LLM** | `google/flan-t5-base` via HuggingFace Transformers |
-| **Embeddings** | `sentence-transformers/all-MiniLM-L6-v2` |
-| **Web Search** | DuckDuckGo (no API key) |
-| **Web Scraping** | BeautifulSoup + requests (concurrent) |
-| **Vector DB** | FAISS (local, in-memory + disk) |
-| **Python API** | FastAPI + Uvicorn |
-| **Node.js API** | Express 5 (proxy layer) |
-| **Frontend** | React + Vite + Tailwind CSS |
-| **State** | TanStack React Query (polling) |
+| Method | Endpoint       | Description     |
+| ------ | -------------- | --------------- |
+| GET    | /healthz       | Health check    |
+| POST   | /research      | Start research  |
+| GET    | /research/{id} | Get report      |
+| GET    | /history       | List reports    |
+| GET    | /history/{id}  | View report     |
+| POST   | /search        | Semantic search |
+
+---
+
+## 📌 Notes
+
+* First run may take time due to model download
+* No external paid APIs required
+* Works offline after initial setup
+
+---

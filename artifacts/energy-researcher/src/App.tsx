@@ -12,8 +12,7 @@ import NotFound from "@/pages/not-found";
 
 import { setBaseUrl } from "@workspace/api-client-react";
 
-setBaseUrl("http://localhost:8000"); // or your backend URL
-
+setBaseUrl("http://localhost:8080/api")
 // Initialize React Query client with sane defaults
 const queryClient = new QueryClient({
   defaultOptions: {
