@@ -12,7 +12,9 @@ import NotFound from "@/pages/not-found";
 
 import { setBaseUrl } from "@workspace/api-client-react";
 
+// setBaseUrl(import.meta.env.VITE_API_URL + "/api")
 setBaseUrl("http://localhost:8080/api")
+
 // Initialize React Query client with sane defaults
 const queryClient = new QueryClient({
   defaultOptions: {

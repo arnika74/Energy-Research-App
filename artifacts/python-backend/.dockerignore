@@ -1,14 +1,39 @@
-venv/
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-.env
-.git
+# Virtual environment (VERY IMPORTANT)
+venv/
+env/
+
+# Git
+.git/
 .gitignore
 
-data/
-faiss_index/
+# Node (just in case)
+node_modules/
 
+# Project runtime data (MAIN SIZE ISSUE)
+data/
+
+# Logs
 *.log
+
+# Model & ML files (IMPORTANT)
+*.bin
+*.pt
+*.model
+
+# HuggingFace cache (VERY IMPORTANT)
+.cache/
+.cache/huggingface/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml

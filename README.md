@@ -1,5 +1,5 @@
 
-# Energy Researcher App
+# Energy Research App
 
 An AI-powered application that performs automated web research, analyzes content using a multi-agent pipeline, and generates structured reports.
 
@@ -301,3 +301,4 @@ Frontend → Displays results
 * Works offline after initial setup
 
 ---
+
