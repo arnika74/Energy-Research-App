@@ -22,7 +22,7 @@ jobs:
 
       - name: Build & Push Frontend
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest ./artifacts/energy-researcher
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest
 
       - name: Build & Push API Server
