@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
 # Prevent Python from writing .pyc files & enable logs instantly
 ENV PYTHONDONTWRITEBYTECODE=1

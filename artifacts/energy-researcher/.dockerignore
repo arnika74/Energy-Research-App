@@ -2,5 +2,9 @@ node_modules
 dist
 .git
 .gitignore
+.cache
+.vite
 .env
+.env.*
 *.log
+coverage

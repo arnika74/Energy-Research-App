@@ -21,7 +21,9 @@ services:
     environment:
       - PORT=8080
       - PYTHON_API_PORT=8000
-      - PYTHON_API_HOST=python-backend   # 🔥 IMPORTANT
+      - PYTHON_API_HOST=python-backend
+      - ML_SERVICE_HOST=ml-service
+      - ML_SERVICE_PORT=8001
     depends_on:
       - python-backend
 

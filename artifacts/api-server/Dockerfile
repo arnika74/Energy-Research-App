@@ -4,17 +4,16 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-# Copy root files
+# Copy only workspace files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Copy ALL workspace folders
-COPY artifacts ./artifacts
+# Copy ONLY api-server (NOT whole artifacts folder)
+COPY artifacts/api-server ./artifacts/api-server
 COPY lib ./lib
 
-# Install dependencies
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-# Build api-server
+# Build ONLY api-server
 RUN pnpm --filter @workspace/api-server build
 
 WORKDIR /app/artifacts/api-server

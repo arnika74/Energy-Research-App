@@ -1,12 +1,8 @@
 fastapi==0.115.6
 uvicorn==0.32.1
 pydantic==2.10.4
-duckduckgo-search==7.2.1
-beautifulsoup4==4.12.3
 requests==2.32.3
-sentence-transformers==3.3.1
-transformers==4.47.1
-faiss-cpu==1.9.0.post1
-numpy==1.26.4
+beautifulsoup4==4.12.3
 python-dotenv==1.0.1
-torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
+numpy==1.26.4
+faiss-cpu==1.7.4
