@@ -22,12 +22,19 @@ jobs:
 
       - name: Build & Push Frontend
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest .
+          docker build \
+            -t ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest \
+            -f artifacts/energy-researcher/Dockerfile \
+            .
           docker push ${{ secrets.DOCKER_USERNAME }}/energy-frontend:latest
+
 
       - name: Build & Push API Server
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest .
+          docker build \
+            -t ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest \
+            -f artifacts/api-server/Dockerfile \
+            .
           docker push ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest
 
       - name: Deploy to EC2
