@@ -27,7 +27,7 @@ jobs:
 
       - name: Build & Push API Server
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest ./artifacts/api-server
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/energy-api-server:latest
 
       - name: Deploy to EC2
