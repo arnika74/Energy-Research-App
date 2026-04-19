@@ -1,27 +1,31 @@
+# ---------- Build Stage ----------
 FROM node:20 AS build
-
-RUN npm install -g pnpm
 
 WORKDIR /app
 
+RUN npm install -g pnpm
+
+# Copy ONLY dependency files first (better caching)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy full monorepo
 COPY . .
 
-RUN pnpm install --no-frozen-lockfile --config.confirmModulesPurge=false
+# Install dependencies (IMPORTANT: deterministic build)
+RUN pnpm install --frozen-lockfile
 
-ENV PORT=5173
-ENV BASE_PATH=/
-
-# 🔥 Move into frontend folder before build
+# Move to frontend package and build
 WORKDIR /app/artifacts/energy-researcher
 
 RUN pnpm build
 
 
-# ---------- Production ----------
+# ---------- Production Stage ----------
 FROM nginx:alpine
 
-# ✅ Correct path now
-COPY --from=build /app/artifacts/energy-researcher/dist/public /usr/share/nginx/html
+# safer nginx path handling
+COPY --from=build /app/artifacts/energy-researcher/dist / public/usr/share/nginx/html
+
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
