@@ -9,13 +9,14 @@ jobs:
 deploy:
 runs-on: ubuntu-latest
 
-```
+
 steps:
   - name: Checkout Code
     uses: actions/checkout@v3
 
   - name: Docker Login
-    run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    run: |
+      echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
   - name: Build & Push Frontend
     run: |
@@ -39,4 +40,3 @@ steps:
         docker pull ${{ secrets.DOCKER_USERNAME }}/energy-api-server
         docker-compose down
         docker-compose up -d
-```
