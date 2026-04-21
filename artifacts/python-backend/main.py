@@ -104,8 +104,8 @@ def _run_pipeline(job_id: str, query: str, max_sources: int):
 
         save_report(report)
 
-        progress("💾 Saving to knowledge base...")
-        get_faiss_store().add_report(report)
+        # progress("💾 Saving to knowledge base...")
+        # get_faiss_store().add_report(report)
 
         with _lock:
             _jobs[job_id].update(
