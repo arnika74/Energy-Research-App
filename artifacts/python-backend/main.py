@@ -33,16 +33,13 @@ logger = logging.getLogger(__name__)
 
 
 def _preload_models():
-    """Preload LLM and embedding models at startup in a background thread."""
+    """Lightweight mode — no heavy ML models."""
     try:
-        logger.info("Preloading models...")
+        logger.info("Skipping embedding + heavy model preload")
         from models.llm_model import load_model
-        from tools.embedding_tool import load_embedding_model
-        load_embedding_model()
-        load_model()
-        logger.info("All models ready")
+        load_model()  # safe (you replaced it already)
     except Exception as e:
-        logger.error(f"Model preload failed: {e}")
+        logger.error(f"Startup issue: {e}")
 
 
 @asynccontextmanager

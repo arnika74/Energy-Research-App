@@ -8,7 +8,7 @@ import http from "http";
 
 const router: IRouter = Router();
 
-const PYTHON_HOST = process.env["PYTHON_API_HOST"] || "localhost";
+const PYTHON_HOST = process.env["PYTHON_API_HOST"]!;
 const PYTHON_PORT = parseInt(process.env["PYTHON_API_PORT"] ?? "8000", 10);
 const PROXY_TIMEOUT_MS = 60_000; // 60 s — allows for model inference time
 
