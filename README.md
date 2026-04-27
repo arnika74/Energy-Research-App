@@ -6,6 +6,17 @@ An AI-powered application that performs automated web research, analyzes content
 The system mimics a research assistant by combining web search, scraping, analysis, and summarization into a single workflow.
 
 ---
+## 🚀 Live Architecture
+
+Frontend (React + Nginx)
+        ↓
+Node API Server (/api)
+        ↓
+Python AI Backend (FastAPI)
+        ↓
+LLM + Embeddings + FAISS
+
+---
 
 ## 🧰 Tech Stack
 
@@ -19,8 +30,9 @@ The system mimics a research assistant by combining web search, scraping, analys
 | Web Scraping     | BeautifulSoup, Requests             |
 | Search Engine    | DuckDuckGo                          |
 | Containerization | Docker, Docker Compose              |
-| Cloud (Optional) | AWS                                 |
+| Cloud            | AWS EC2                             |
 | Architecture     | Multi-Agent System                  |
+| CI/CD            | Git Actions                         | 
 
 ---
 
@@ -67,6 +79,8 @@ project/
 │               └── layout/
 │                   ├── Sidebar.tsx
 │                   └── AppLayout.tsx
+├── docker-compose.yml 
+├── .github/workflows/ # CI/CD pipelines
 ```
 
 ---
@@ -249,8 +263,44 @@ Local: http://localhost:5173/
 
 Visit:
 
-👉 http://localhost:8000
+👉 http://localhost:3000
 
+---
+## 🌍 Production Deployment (AWS EC2 + CI/CD)
+
+This project supports automated deployment using GitHub Actions + Docker Hub + EC2.
+
+# 🚀 Workflow
+Push code to main
+GitHub Actions:
+Build Docker images
+Push to Docker Hub
+EC2:
+Pull latest images
+Restart containers
+
+# 🔐 Required GitHub Secrets
+DOCKER_USERNAME
+DOCKER_PASSWORD
+EC2_HOST
+EC2_USER
+EC2_SSH_KEY
+
+# 🐳 Deployment Behavior
+Containers are updated automatically
+
+Old images are cleaned using:
+
+docker image prune -af
+Zero manual deployment required
+🔌 API Routing (IMPORTANT)
+
+All API calls go through:
+
+/api → Node API Server → Python Backend
+Example:
+Frontend Call	Actual Backend
+/api/history	python-backend:8000/history
 ---
 
 ## ⚠️ Common Issues
@@ -261,6 +311,41 @@ Visit:
 | Port already in use           | Kill process using port       |
 | Old containers conflict       | `docker container prune`      |
 
+---
+
+## ⚠️ Common Mistakes (Solved)
+
+❌ 404 Error
+
+```
+Wrong route:
+/history
+
+Correct:
+/api/history
+```
+
+❌ 503 Error
+
+```
+Means:
+service not ready OR
+container not reachable
+
+Fix:
+docker ps
+docker logs <container>
+```
+
+❌ CORS Issues
+```
+Handled via API server proxy (/api)
+```
+
+❌ Env Issues
+```
+Frontend uses build-time variables (Vite)
+```
 ---
 
 ## 🧠 How It Works
@@ -293,6 +378,15 @@ Frontend → Displays results
 | POST   | /search        | Semantic search |
 
 ---
+## 🧠 Features
+🔍 Automated web research
+📄 AI-generated structured reports
+📚 Research history tracking
+🔎 Semantic search (FAISS)
+⚡ Multi-agent architecture
+🐳 Fully Dockerized
+☁️ Cloud-ready (AWS)
+---
 
 ## 📌 Notes
 
@@ -301,4 +395,9 @@ Frontend → Displays results
 * Works offline after initial setup
 
 ---
-
+## ⭐ Future Improvements
+Add authentication
+Add streaming responses
+Improve UI/UX
+Add Redis queue for async jobs
+--- 
